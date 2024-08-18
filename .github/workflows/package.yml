@@ -1,0 +1,138 @@
+name: buildarmpkg
+on:
+  workflow_dispatch:
+  push:
+
+concurrency:
+  group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    steps:
+      -
+        uses: actions/checkout@v4
+        with:
+          path: qbootctl
+          fetch-depth: '1'
+      - 
+        id: time
+        uses: boredland/get-time-action@2.0.0
+        with:
+          format: 'YYYYMMDD'
+      -  
+        name: install-build-dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt install \
+            gdisk \
+            zip \
+            systemd-container \
+            bmap-tools asciidoc \
+            libarchive-tools \
+            git \
+            build-essential \
+            cmake \
+            libarchive-dev \
+            pkg-config \
+            libcurl4-openssl-dev \
+            libgpgme-dev \
+            libssl-dev \
+            fakeroot \
+            dh-autoreconf \
+            qemu-utils \
+            qemu-efi-aarch64 \
+            qemu-system-arm \
+            qemu-user-static
+          sudo pip3 install meson
+          sudo pip3 install ninja
+          
+      -
+        name: install-pacman
+        shell: bash
+        env:
+          PACMAN_VERSION: 6.0.2
+        run: |
+          sudo git clone --depth 1 https://gitlab.manjaro.org/packages/core/pacman.git
+          pushd pacman
+            sudo wget https://sources.archlinux.org/other/pacman/pacman-${PACMAN_VERSION}.tar.xz
+            sudo tar -xvf pacman-${PACMAN_VERSION}.tar.xz
+            pushd pacman-${PACMAN_VERSION}
+              sudo meson --prefix=/usr \
+                        --buildtype=plain \
+                        -Ddoc=disabled \
+                        -Ddoxygen=enabled \
+                        -Dscriptlet-shell=/usr/bin/bash \
+                        -Dldconfig=/usr/bin/ldconfig \
+                        build
+              sudo meson compile -C build
+              sudo meson install -C build
+            popd
+            sudo install -m644 pacman.conf /etc/pacman.conf
+            sudo install -m644 makepkg.conf /etc/
+            sudo mkdir -p /etc/pacman.d
+            sudo touch /etc/pacman.d/mirrorlist
+          popd
+      -
+        name: setup-qemu-binfmt
+        shell: bash
+        run: |
+          sudo wget https://gitlab.manjaro.org/packages/community/manjaro-arm-qemu-static/-/raw/master/qemu-static.conf -O /usr/lib/binfmt.d/qemu-static.conf
+          sudo service systemd-binfmt restart
+          
+      - 
+        name: install-arch-install-scripts
+        shell: bash
+        env:
+          VERSION: 28
+        run: |
+          sudo wget https://github.com/archlinux/arch-install-scripts/archive/refs/tags/v${VERSION}.tar.gz -O arch-install-scripts.tar.gz
+          sudo tar -xvf arch-install-scripts.tar.gz
+          sudo make -C arch-install-scripts-${VERSION}
+          sudo make -C arch-install-scripts-${VERSION} check
+          sudo make -C arch-install-scripts-${VERSION} PREFIX=/usr install
+      -
+        name: install-manjaro-arm-tools
+        shell: bash
+        run: |
+          sudo git clone https://gitlab.manjaro.org/manjaro-arm/applications/manjaro-arm-tools.git
+          install_m_a_tools() {
+              pkgname=manjaro-arm-tools
+              sudo install -dm777 /usr/share/$pkgname/lib
+              sudo install -dm777 /usr/share/$pkgname/profiles
+              sudo install -d /etc/$pkgname/
+              sudo install -dm777 /var/lib/$pkgname/{pkg,img,tmp,profiles}
+              sudo install -dm777 /var/cache/$pkgname/{pkg/pkg-cache,img}
+              sudo install -Dm755 $pkgname/lib/* /usr/share/$pkgname/lib/
+              sudo install -Dm755 $pkgname/bin/* /usr/bin/
+              sudo install -Dm755 $pkgname/lib/manjaro-arm-tools.conf /etc/manjaro-arm-tools/
+          }
+          install_m_a_tools
+          
+          sudo sed -i -e 's|1>/dev/null||g' /usr/share/manjaro-arm-tools/lib/functions.sh   
+          sudo sed -i -e 's|1> /dev/null 2>&1||g' /usr/share/manjaro-arm-tools/lib/functions.sh
+          sudo sed -i -e 's|2>/dev/null||g' /usr/share/manjaro-arm-tools/lib/functions.sh 
+      -
+        name: build
+        shell: bash
+        run: |
+          sudo buildarmpkg -p qbootctl
+          
+          ls -lasih /var/cache/manjaro-arm-tools/pkg
+          
+          mkdir -p ./artifacts
+          find /var/cache/manjaro-arm-tools/pkg/ -type f -name '*.pkg.tar.*' -exec cp '{}' ./artifacts/ ';'
+      -
+        name: Release assets
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.time.outputs.time }}
+          name: ${{ steps.time.outputs.time }}
+          draft: false
+          prerelease: false
+          files: |
+            ./artifacts/*.pkg.tar.*
