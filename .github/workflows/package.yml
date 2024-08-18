@@ -120,10 +120,10 @@ jobs:
         run: |
           sudo buildarmpkg -p qbootctl
           
-          ls -lasih /var/cache/manjaro-arm-tools/pkg
+          ls -lasih /var/cache/manjaro-arm-tools/pkg/aarch64
           
           mkdir -p ./artifacts
-          find /var/cache/manjaro-arm-tools/pkg/ -type f -name '*.pkg.tar.*' -exec cp '{}' ./artifacts/ ';'
+          find /var/cache/manjaro-arm-tools/pkg/aarch64/ -type f -name '*.pkg.tar.*' -exec cp '{}' ./artifacts/ ';'
       -
         name: Release assets
         uses: softprops/action-gh-release@v2
