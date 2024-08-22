@@ -27,6 +27,8 @@ jobs:
         with:
           pkgbuild-dir: ./qbootctl
           output-dir: ./artifacts
+        env:
+          VARIABLE: "testing variables"
       -
         name: Release assets
         uses: softprops/action-gh-release@v2
