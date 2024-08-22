@@ -22,6 +22,7 @@ pkgver() {
 build() {
 	arch-meson "$pkgname" build
 	meson compile -C build
+        echo Variable value is"$VARIABLE"
 }
 
 package() {
