@@ -12,7 +12,7 @@ makedepends=("git" "meson" "gcc")
 source=("git+https://github.com/rodriguezst/qbootctl.git"
 		"qbootctl.service")
 sha256sums=("SKIP"
-			"dbb2f86b9bdff8809c475c4888860c2a3b4b10b9d0d3d0c73a151ce51f5cda8b")
+			"SKIP")
 
 pkgver() {
 	cd "$pkgname"

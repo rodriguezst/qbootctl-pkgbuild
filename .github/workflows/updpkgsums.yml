@@ -1,0 +1,46 @@
+name: updpkgsums
+on:
+  workflow_dispatch:
+  push:
+
+concurrency:
+  group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  updpkgsums:
+    runs-on: ubuntu-22.04
+    steps:
+      -
+        uses: actions/checkout@v4
+        with:
+          path: qbootctl
+          fetch-depth: '1'
+      -
+        name: install-build-dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt install \
+            base-devel \
+            fakeroot \
+            xmlto
+      -
+        uses: actions/checkout@v4
+        with:
+          repository: https://gitlab.archlinux.org/archlinux/packaging/packages/pacman-contrib.git
+          path: pacman-contrib
+          fetch-depth: '1'
+      -
+        name: install pacman-contrib
+        shell: bash
+        run: |
+          cd pacman-contrib
+          ./autogen.sh
+          ./configure --prefix=/usr \
+            --sysconfdir=/etc \
+            --localstatedir=/var
+          make
+          make check
+          make install
+
