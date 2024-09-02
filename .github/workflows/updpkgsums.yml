@@ -22,7 +22,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt install \
-            base-devel \
             fakeroot \
             xmlto
       -
