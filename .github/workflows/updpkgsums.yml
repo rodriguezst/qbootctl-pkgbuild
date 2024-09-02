@@ -66,4 +66,11 @@ jobs:
           make
           make check
           sudo make install
-
+      -
+        name: test
+        shell: bash
+        run: |
+          cd qbootctl
+          cat PKGBUILD
+          updpkgsums
+          cat PKGBUILD
