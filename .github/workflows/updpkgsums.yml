@@ -21,8 +21,7 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt install \
-            libarchive
+          #sudo apt install \
       -
         name: install pacman
         shell: bash
