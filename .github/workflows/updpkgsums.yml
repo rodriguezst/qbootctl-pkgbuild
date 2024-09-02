@@ -55,7 +55,7 @@ jobs:
         name: install pacman-contrib
         shell: bash
         run: |
-          git clone https://gitlab.archlinux.org/archlinux/packaging/packages/pacman-contrib.git --depth=1 pacman-contrib
+          git clone --depth=1 https://gitlab.archlinux.org/pacman/pacman-contrib.git pacman-contrib
           cd pacman-contrib
           ./autogen.sh
           ./configure --prefix=/usr \
