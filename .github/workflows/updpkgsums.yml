@@ -21,7 +21,8 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          #sudo apt install \
+          sudo apt install \
+            meson
       -
         name: install pacman
         shell: bash
