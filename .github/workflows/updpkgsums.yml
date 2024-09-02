@@ -22,7 +22,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt install \
-            meson
+            meson \
+            libarchive-dev
       -
         name: install pacman
         shell: bash
