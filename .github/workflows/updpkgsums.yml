@@ -71,6 +71,5 @@ jobs:
         shell: bash
         run: |
           cd qbootctl
-          cat PKGBUILD
           updpkgsums
-          cat PKGBUILD
+          git diff
